@@ -1,0 +1,2 @@
+# ginBlog
+Use Gin framework
