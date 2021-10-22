@@ -1,8 +1,11 @@
 package model
 
 import (
+	"encoding/base64"
 	"ginBlog/utils/errmsg"
+	"golang.org/x/crypto/scrypt"
 	"gorm.io/gorm"
+	"log"
 )
 
 type User struct {
@@ -36,6 +39,8 @@ func CheckUpUser(id int, name string) (code int) {
 }
 
 func CreateUser(data *User) int  {
+	//data.Password = ScryptPassword(data.Password)
+	data.BeforeSave()
 	err := db.Create(&data).Error
 	if err != nil {
 		return errmsg.ERROR  // 500
@@ -55,3 +60,45 @@ func GetUsers(pageSize int, pageNum int) []User {
 	return users
 }
 
+func DeleteUser(id int)  int  {
+	var user User
+	err = db.Where("id = ?", id).Delete(&user).Error
+	if err != nil {
+		return errmsg.ERROR
+	}
+
+	return errmsg.SUCCSE
+}
+
+func EditUser(id int, data *User) int  {
+	var user User
+	var maps = make(map[string]interface{})
+
+	maps["username"] = data.Username
+	maps["role"] = data.Role
+
+	err = db.Model(&user).Where("id = ?", id).Updates(maps).Error
+	if err != nil {
+		return errmsg.ERROR
+	}
+
+	return errmsg.SUCCSE
+}
+
+func (u *User) BeforeSave() {
+	u.Password = ScryptPassword(u.Password)
+}
+
+func ScryptPassword(password string) string  {
+	const KeyLen = 10
+	salt := make([]byte,8)
+	salt = []byte{12,32,4,6,66,22,222,11}
+	HashPw, err := scrypt.Key([]byte(password), salt, 16384, 8,1, KeyLen)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	finalPassword:= base64.StdEncoding.EncodeToString(HashPw)
+	return finalPassword
+
+}
