@@ -1,6 +1,9 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"ginBlog/utils/errmsg"
+	"gorm.io/gorm"
+)
 
 type Article struct {
 	Category Category `gorm:"foreignkey:Cid"`
@@ -10,4 +13,55 @@ type Article struct {
 	Desc         string `gorm:"type:varchar(200)" json:"desc"`
 	Content      string `gorm:"type:longtext" json:"content"`
 	Img          string `gorm:"type:varchar(100)" json:"img"`
+}
+
+
+
+func CreateArticle(data *Article) int  {
+
+	err := db.Create(&data).Error
+	if err != nil {
+		return errmsg.ERROR  // 500
+	}
+
+	return errmsg.SUCCSE // 200
+}
+
+
+func GetCatArticle(pageSize int, pageNum int) ([]Article, int) {
+	var catArticleList []Article
+	err = db.Preload("Category").Limit(pageSize).Offset((pageNum-1)*pageSize).Find(&catArticleList).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil,errmsg.ERROR_CATE_NOT_EXIST
+	}
+
+	return catArticleList,errmsg.SUCCSE
+}
+
+func DeleteArticle(id int)  int  {
+	var article Article
+	err = db.Where("id = ?", id).Delete(&article).Error
+	if err != nil {
+		return errmsg.ERROR
+	}
+
+	return errmsg.SUCCSE
+}
+
+func EditArticle(id int, data *Article) int  {
+	var article Article
+	var maps = make(map[string]interface{})
+
+	maps["title"] = data.Title
+	maps["cid"] = data.Cid
+	maps["desc"] = data.Desc
+	maps["content"] = data.Content
+	maps["img"] = data.Img
+
+	err = db.Model(&article).Where("id = ?", id).Updates(maps).Error
+	if err != nil {
+		return errmsg.ERROR
+	}
+
+	return errmsg.SUCCSE
 }
