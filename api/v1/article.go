@@ -22,6 +22,37 @@ func AddArticle(c *gin.Context) {
 	})
 }
 
+func GetCategoryArticle(c *gin.Context)  {
+	paseSize, _ := strconv.Atoi(c.Query("pagesize"))
+	pageNum, _ := strconv.Atoi(c.Query("pagenum"))
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	if paseSize == 0 {
+		paseSize = -1
+	}
+	if pageNum == 0 {
+		pageNum = -1
+	}
+
+	data, code := model.GetCategoryArticle(id,paseSize,pageNum)
+	c.JSON(http.StatusOK, gin.H{
+		"status":  code,
+		"data":    data,
+		"message": errmsg.GetErrMsg(code),
+	})
+}
+
+func GetArticleInfo(c *gin.Context)  {
+	id, _ := strconv.Atoi(c.Param("id"))
+	data, code := model.GetArticleInfo(id)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  code,
+		"data":    data,
+		"message": errmsg.GetErrMsg(code),
+	})
+}
+
 func GetArticle(c *gin.Context) {
 	paseSize, _ := strconv.Atoi(c.Query("pagesize"))
 	pageNum, _ := strconv.Atoi(c.Query("pagenum"))
@@ -33,7 +64,7 @@ func GetArticle(c *gin.Context) {
 		pageNum = -1
 	}
 
-	data ,code := model.GetCatArticle(paseSize, pageNum)
+	data ,code := model.GetArticle(paseSize, pageNum)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  code,

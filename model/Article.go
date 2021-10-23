@@ -27,15 +27,34 @@ func CreateArticle(data *Article) int  {
 	return errmsg.SUCCSE // 200
 }
 
-
-func GetCatArticle(pageSize int, pageNum int) ([]Article, int) {
+func GetCategoryArticle(id int,pageSize int, pageNum int)  ([]Article, int){
 	var catArticleList []Article
-	err = db.Preload("Category").Limit(pageSize).Offset((pageNum-1)*pageSize).Find(&catArticleList).Error
+	err := db.Preload("Category").Limit(pageSize).Offset((pageNum-1)*pageSize).Where("cid = ?", id).Find(&catArticleList).Error
+	if err != nil {
+		return nil,errmsg.ERROR_CATE_NOT_EXIST
+	}
+
+	return catArticleList, errmsg.SUCCSE
+}
+
+func GetArticleInfo(id int) (Article, int)  {
+	var article Article
+	err := db.Preload("Category").Where("id = ?",id).First(&article).Error
+	if err != nil {
+		return article, errmsg.ERROR_ART_NOT_EXIST
+	}
+
+	return article, errmsg.SUCCSE
+}
+
+func GetArticle(pageSize int, pageNum int) ([]Article, int) {
+	var articleList []Article
+	err = db.Preload("Category").Limit(pageSize).Offset((pageNum-1)*pageSize).Find(&articleList).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil,errmsg.ERROR_CATE_NOT_EXIST
 	}
 
-	return catArticleList,errmsg.SUCCSE
+	return articleList,errmsg.SUCCSE
 }
 
 func DeleteArticle(id int)  int  {

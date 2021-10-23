@@ -8,6 +8,7 @@ import (
 var (
 	AppMode  string
 	HttpPort string
+	JwtKey    string
 
 	Db         string
 	DbHost     string
@@ -17,21 +18,22 @@ var (
 	DbName     string
 )
 
-func init()  {
-	file,err := ini.Load("config/config.ini")
+func init() {
+	file, err := ini.Load("config/config.ini")
 	if err != nil {
-		fmt.Println("The file does nit exist",err)
+		fmt.Println("The file does nit exist", err)
 	}
 	LoadsServer(file)
 	LoadDataBase(file)
 }
 
-func LoadsServer(file *ini.File)  {
+func LoadsServer(file *ini.File) {
 	AppMode = file.Section("server").Key("AppMode").MustString("debug")
 	HttpPort = file.Section("server").Key("HttpPort").MustString(":3000")
+	JwtKey = file.Section("server").Key("JwKey").MustString("asgas7wq")
 }
 
-func LoadDataBase(file *ini.File)  {
+func LoadDataBase(file *ini.File) {
 	Db = file.Section("database").Key("Db").MustString("mysql")
 	DbHost = file.Section("database").Key("DbHost").MustString("localhost")
 	DbPort = file.Section("database").Key("DbPort").MustString("3306")
