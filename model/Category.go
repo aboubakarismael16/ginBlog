@@ -18,7 +18,7 @@ func CheckCategory(name string) (code int)  {
 		return errmsg.ERROR_CATENAME_USED //2001
 	}
 
-	return errmsg.SUCCSE //200
+	return errmsg.SUCCESS //200
 }
 
 
@@ -30,18 +30,27 @@ func CreateCategory(data *Category) int  {
 		return errmsg.ERROR  // 500
 	}
 
-	return errmsg.SUCCSE // 200
+	return errmsg.SUCCESS // 200
+}
+
+// GetCateInfo 查询单个分类信息
+func GetCateInfo(id int) (Category, int) {
+	var cate Category
+	db.Where("id = ?", id).First(&cate)
+	return cate, errmsg.SUCCESS
 }
 
 
-func GetCategories(pageSize int, pageNum int) []Category {
+func GetCategories(pageSize int, pageNum int) ([]Category, int64) {
 	var categories []Category
+	var total int64
 	err = db.Limit(pageSize).Offset((pageNum-1)*pageSize).Find(&categories).Error
+	db.Model(&categories).Count(&total)
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil
+		return nil, 0
 	}
 
-	return categories
+	return categories, total
 }
 
 func DeleteCategory(id int)  int  {
@@ -51,7 +60,7 @@ func DeleteCategory(id int)  int  {
 		return errmsg.ERROR
 	}
 
-	return errmsg.SUCCSE
+	return errmsg.SUCCESS
 }
 
 func EditCategory(id int, data *Category) int  {
@@ -65,6 +74,6 @@ func EditCategory(id int, data *Category) int  {
 		return errmsg.ERROR
 	}
 
-	return errmsg.SUCCSE
+	return errmsg.SUCCESS
 }
 

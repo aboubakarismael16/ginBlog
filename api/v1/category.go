@@ -8,42 +8,63 @@ import (
 	"strconv"
 )
 
+var code int
 
 func AddCategory(c *gin.Context) {
 
-	var catogory model.Category
-	_ = c.ShouldBindJSON(&catogory)
-	code = model.CheckCategory(catogory.Name)
-	if code == errmsg.SUCCSE {
-		model.CreateCategory(&catogory)
+	var category model.Category
+	_ = c.ShouldBindJSON(&category)
+	code = model.CheckCategory(category.Name)
+	if code == errmsg.SUCCESS {
+		model.CreateCategory(&category)
 	}
-	if code == errmsg.ERROR_CATENAME_USED {
-		code = errmsg.ERROR_CATENAME_USED
-	}
+
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  code,
-		"data":    catogory,
+		"data":    category,
 		"message": errmsg.GetErrMsg(code),
 	})
 }
 
+// GetCateInfo 查询分类信息
+func GetCategoryInfo(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	data, code := model.GetCateInfo(id)
+
+	c.JSON(
+		http.StatusOK, gin.H{
+			"status":  code,
+			"data":    data,
+			"message": errmsg.GetErrMsg(code),
+		},
+	)
+
+}
+
+// GetCategory 查询分类列表
 func GetCategory(c *gin.Context) {
-	paseSize, _ := strconv.Atoi(c.Query("pagesize"))
+	pageSize, _ := strconv.Atoi(c.Query("pagesize"))
 	pageNum, _ := strconv.Atoi(c.Query("pagenum"))
 
-	if paseSize == 0 {
-		paseSize = -1
-	}
-	if pageNum == 0 {
-		pageNum = -1
+	switch {
+	case pageSize >= 100:
+		pageSize = 100
+	case pageSize <= 0:
+		pageSize = 10
 	}
 
-	data := model.GetCategories(paseSize, pageNum)
-	code = errmsg.SUCCSE
+	if pageNum == 0 {
+		pageNum = 1
+	}
+
+	data, total := model.GetCategories(pageSize, pageNum)
+	code = errmsg.SUCCESS
 	c.JSON(http.StatusOK, gin.H{
 		"status":  code,
 		"data":    data,
+		"total": total,
 		"message": errmsg.GetErrMsg(code),
 	})
 }
@@ -53,7 +74,7 @@ func EditCategory(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	c.ShouldBindJSON(&category)
 	code = model.CheckCategory(category.Name)
-	if code == errmsg.SUCCSE {
+	if code == errmsg.SUCCESS {
 		model.EditCategory(id, &category)
 	}
 

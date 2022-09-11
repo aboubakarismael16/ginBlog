@@ -4,28 +4,68 @@ import (
 	"ginBlog/middleware"
 	"ginBlog/model"
 	"ginBlog/utils/errmsg"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
-func Login(c *gin.Context)  {
-	var data model.User
-	c.ShouldBindJSON(&data)
+// Login 后台登陆
+func Login(c *gin.Context) {
+	var formData model.User
+	_ = c.ShouldBindJSON(&formData)
 	var token string
 	var code int
 
-	code = model.CheckLogin(data.Username, data.Password)
+	formData, code = model.CheckLogin(formData.Username, formData.Password)
 
-
-	if code == errmsg.SUCCSE {
-		token, code = middleware.SetToken(data.Username)
+	if code == errmsg.SUCCESS {
+		setToken(c, formData)
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  code,
+			"data":    formData.Username,
+			"id":      formData.ID,
+			"message": errmsg.GetErrMsg(code),
+			"token":   token,
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"status":code,
-		"message":errmsg.GetErrMsg(code),
-		"token":token,
-	})
+
 }
+
+// token生成函数
+func setToken(c *gin.Context, user model.User) {
+	j := middleware.NewJWT()
+	claims := middleware.MyClaims{
+		Username: user.Username,
+		StandardClaims: jwt.StandardClaims{
+			NotBefore: time.Now().Unix() - 100,
+			ExpiresAt: time.Now().Unix() + 604800,
+			Issuer:    "ginblog",
+		},
+	}
+
+	token, err := j.CreateToken(claims)
+
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  errmsg.ERROR,
+			"message": errmsg.GetErrMsg(errmsg.ERROR),
+			"token":   token,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  200,
+		"data":    user.Username,
+		"id":      user.ID,
+		"message": errmsg.GetErrMsg(200),
+		"token":   token,
+	})
+	return
+}
+
+
 
 
 

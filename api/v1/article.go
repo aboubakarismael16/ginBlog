@@ -8,12 +8,13 @@ import (
 	"strconv"
 )
 
+
 func AddArticle(c *gin.Context) {
 
 	var article model.Article
 	_ = c.ShouldBindJSON(&article)
 
-	code = model.CreateArticle(&article)
+	code := model.CreateArticle(&article)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  code,
@@ -23,18 +24,22 @@ func AddArticle(c *gin.Context) {
 }
 
 func GetCategoryArticle(c *gin.Context)  {
-	paseSize, _ := strconv.Atoi(c.Query("pagesize"))
+	pageSize, _ := strconv.Atoi(c.Query("pagesize"))
 	pageNum, _ := strconv.Atoi(c.Query("pagenum"))
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	if paseSize == 0 {
-		paseSize = -1
-	}
-	if pageNum == 0 {
-		pageNum = -1
+	switch {
+	case pageSize >= 100:
+		pageSize = 100
+	case pageSize <= 0:
+		pageSize = 10
 	}
 
-	data, code := model.GetCategoryArticle(id,paseSize,pageNum)
+	if pageNum == 0 {
+		pageNum = 1
+	}
+
+	data, code := model.GetCategoryArticle(id,pageSize,pageNum)
 	c.JSON(http.StatusOK, gin.H{
 		"status":  code,
 		"data":    data,
@@ -54,23 +59,41 @@ func GetArticleInfo(c *gin.Context)  {
 }
 
 func GetArticle(c *gin.Context) {
-	paseSize, _ := strconv.Atoi(c.Query("pagesize"))
+	pageSize, _ := strconv.Atoi(c.Query("pagesize"))
 	pageNum, _ := strconv.Atoi(c.Query("pagenum"))
+	title := c.Query("title")
 
-	if paseSize == 0 {
-		paseSize = -1
+	switch {
+	case pageSize >= 100:
+		pageSize = 100
+	case pageSize <= 0:
+		pageSize = 10
 	}
+
 	if pageNum == 0 {
-		pageNum = -1
+		pageNum = 1
 	}
 
-	data ,code := model.GetArticle(paseSize, pageNum)
+	if len(title) == 0 {
+		data, code, total := model.GetArticle(pageSize, pageNum)
+		c.JSON(http.StatusOK, gin.H{
+			"status":  code,
+			"data":    data,
+			"total":   total,
+			"message": errmsg.GetErrMsg(code),
+		})
+		return
+	}
 
+
+	data, code, total := model.SearchArticle(title, pageSize, pageNum)
 	c.JSON(http.StatusOK, gin.H{
 		"status":  code,
 		"data":    data,
+		"total":   total,
 		"message": errmsg.GetErrMsg(code),
 	})
+
 }
 
 func EditArticle(c *gin.Context) {
@@ -78,7 +101,7 @@ func EditArticle(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	c.ShouldBindJSON(&article)
 
-	code = model.EditArticle(id, &article)
+	code := model.EditArticle(id, &article)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  code,
@@ -89,7 +112,7 @@ func EditArticle(c *gin.Context) {
 func DeleteArticle(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	code = model.DeleteArticle(id)
+	code := model.DeleteArticle(id)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  code,

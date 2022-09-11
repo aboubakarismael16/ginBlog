@@ -24,7 +24,7 @@ func CreateArticle(data *Article) int  {
 		return errmsg.ERROR  // 500
 	}
 
-	return errmsg.SUCCSE // 200
+	return errmsg.SUCCESS // 200
 }
 
 func GetCategoryArticle(id int,pageSize int, pageNum int)  ([]Article, int){
@@ -34,7 +34,7 @@ func GetCategoryArticle(id int,pageSize int, pageNum int)  ([]Article, int){
 		return nil,errmsg.ERROR_CATE_NOT_EXIST
 	}
 
-	return catArticleList, errmsg.SUCCSE
+	return catArticleList, errmsg.SUCCESS
 }
 
 func GetArticleInfo(id int) (Article, int)  {
@@ -44,18 +44,43 @@ func GetArticleInfo(id int) (Article, int)  {
 		return article, errmsg.ERROR_ART_NOT_EXIST
 	}
 
-	return article, errmsg.SUCCSE
+	return article, errmsg.SUCCESS
 }
 
-func GetArticle(pageSize int, pageNum int) ([]Article, int) {
+func GetArticle(pageSize int, pageNum int) ([]Article, int, int64) {
 	var articleList []Article
-	err = db.Preload("Category").Limit(pageSize).Offset((pageNum-1)*pageSize).Find(&articleList).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil,errmsg.ERROR_CATE_NOT_EXIST
-	}
+	var err error
+	var total int64
 
-	return articleList,errmsg.SUCCSE
+	err = db.Select("article.id, title, img, created_at, updated_at, `desc`, comment_count, read_count, category.name").Limit(pageSize).Offset((pageNum - 1) * pageSize).Order("Created_At DESC").Joins("Category").Find(&articleList).Error
+	// 单独计数
+	db.Model(&articleList).Count(&total)
+	if err != nil {
+		return nil, errmsg.ERROR, 0
+	}
+	return articleList, errmsg.SUCCESS, total
+
 }
+
+// SearchArticle 搜索文章标题
+func SearchArticle(title string, pageSize int, pageNum int) ([]Article, int, int64) {
+	var articleList []Article
+	var err error
+	var total int64
+	err = db.Select("article.id,title, img, created_at, updated_at, `desc`, comment_count, read_count, Category.name").Order("Created_At DESC").Joins("Category").Where("title LIKE ?",
+		title+"%",
+	).Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&articleList).Error
+	//单独计数
+	db.Model(&articleList).Where("title LIKE ?",
+		title+"%",
+	).Count(&total)
+
+	if err != nil {
+		return nil, errmsg.ERROR, 0
+	}
+	return articleList, errmsg.SUCCESS, total
+}
+
 
 func DeleteArticle(id int)  int  {
 	var article Article
@@ -64,7 +89,7 @@ func DeleteArticle(id int)  int  {
 		return errmsg.ERROR
 	}
 
-	return errmsg.SUCCSE
+	return errmsg.SUCCESS
 }
 
 func EditArticle(id int, data *Article) int  {
@@ -82,5 +107,5 @@ func EditArticle(id int, data *Article) int  {
 		return errmsg.ERROR
 	}
 
-	return errmsg.SUCCSE
+	return errmsg.SUCCESS
 }
